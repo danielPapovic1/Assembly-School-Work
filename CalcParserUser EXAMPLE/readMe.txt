@@ -1,0 +1,1 @@
+Make sure in order to run this has to be outside the JLex and JavaCup dir. I put it in here for keeping things organized for now. 

@@ -1,0 +1,10 @@
+/** Example A3.tiny file **/
+INT f(INT x, INT y)
+BEGIN
+    RETURN x + y;
+END
+
+INT MAIN f1()
+BEGIN
+    RETURN 7;
+END

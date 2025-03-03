@@ -1,0 +1,87 @@
+import java.io.*;
+import java_cup.runtime.*;
+/* Terminals (tokens returned by the scanner). */
+terminal  TIMES, DIVIDE, OPAREN, CPAREN, BEGIN, END, RETURN, IF, ELSE, WRITE, READ, MAIN, ID;
+terminal NEQUALTO, EQUALTO, NUM, PLUS, MINUS, TYPE,  ASSIGN, SEMI, COM, QSTRING;
+
+/* Non terminals */
+non terminal Integer Program; 
+non terminal MethodDecl, Block, Statement, FormalParams, FormalParam, LocalVarDecl, AssignStmt;
+non terminal ReturnStmt, IfStmt, WriteStmt, ReadStmt, Expression, MultiplicativeExpr, PrimaryExpr, BoolExpression, ActualParams, FunctionCall;
+non terminal StatementList, NonEmptyFormalParams;
+/* Precedences */
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE;
+precedence left ELSE;
+precedence left IF;
+
+start with Program;
+/* The grammar */
+Program ::= MethodDecl {: RESULT = 1;:}|Program:p MethodDecl {: RESULT = p+1;:};
+        
+MethodDecl ::= TYPE MAIN ID OPAREN FormalParams CPAREN Block
+             | TYPE ID OPAREN FormalParams CPAREN Block
+                ;
+FormalParams ::= /* empty */
+              | NonEmptyFormalParams
+              ;
+NonEmptyFormalParams ::= FormalParam
+                      | NonEmptyFormalParams COM FormalParam
+                      ;
+
+FormalParam ::= TYPE ID;
+
+Block ::= BEGIN StatementList END;
+
+StatementList ::= /* empty */
+               | StatementList Statement
+               ;
+
+Statement ::= Block
+            | LocalVarDecl
+            | AssignStmt
+            | ReturnStmt
+            | IfStmt
+            | WriteStmt
+            | ReadStmt
+            | ID SEMI
+            ;
+LocalVarDecl ::= TYPE ID SEMI | TYPE AssignStmt;
+AssignStmt ::= ID ASSIGN Expression SEMI
+             | ID ASSIGN QSTRING SEMI
+             ;
+ReturnStmt ::= RETURN Expression SEMI;
+
+IfStmt ::= IF OPAREN BoolExpression CPAREN Statement ELSE Statement
+         | IF OPAREN BoolExpression CPAREN Statement
+         ;
+WriteStmt ::= WRITE OPAREN Expression COM QSTRING CPAREN SEMI;
+
+ReadStmt ::= READ OPAREN PrimaryExpr COM QSTRING CPAREN SEMI;
+
+Expression ::= MultiplicativeExpr
+            | Expression PLUS MultiplicativeExpr
+            | Expression MINUS MultiplicativeExpr
+            | FunctionCall
+            ;
+
+BoolExpression ::= Expression EQUALTO Expression
+                  | Expression NEQUALTO Expression
+                  ;
+
+FunctionCall ::= ID OPAREN ActualParams CPAREN;
+
+ActualParams ::=
+               | Expression 
+               | ActualParams COM Expression
+               ; 
+
+PrimaryExpr ::= ID
+              | NUM
+              | OPAREN Expression CPAREN
+              ;
+
+MultiplicativeExpr ::= MultiplicativeExpr DIVIDE PrimaryExpr 
+                    | MultiplicativeExpr TIMES PrimaryExpr
+                    | PrimaryExpr
+                    ;
