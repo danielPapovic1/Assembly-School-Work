@@ -1,0 +1,125 @@
+import java.io.*;
+import java_cup.runtime.*;
+
+terminal String TIMES, DIVIDE, OPAREN, CPAREN, BEGIN, END, RETURN, IF, ELSE, WRITE, READ, MAIN, ID, STRING, INT, REAL, TRUE, FALSE;
+terminal String NEQUALTO, EQUALTO, NUM, PLUS, MINUS, ASSIGN, SEMI, COM, DQUOTE, SQUOTE, QSTRING, NULL;
+
+
+non terminal String Program; 
+non terminal String MethodDecl, Block, Statement, FormalParams, FormalParam, LocalVarDecl;
+non terminal String ReturnStmt, IfStmt, WriteStmt, ReadStmt, Expression, MultiplicativeExpr, PrimaryExpr, BoolExpression, ActualParams, FunctionCall;
+non terminal String StatementList, NonEmptyFormalParams;
+non terminal String ProgramTwo, RESULT, TYPE, AssignStmt;
+
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE;
+precedence left ELSE;
+precedence left IF;
+
+
+
+ProgramTwo ::= Program:e {: RESULT ="import java.io.*;\n"+"public class A4 {\n"
+            + e
+            +"\n}" ;:};
+
+Program ::= MethodDecl:m{: RESULT = m;:}|Program:p MethodDecl:m {: RESULT = p+m;:};
+        
+
+
+MethodDecl ::= TYPE MAIN ID OPAREN FormalParams CPAREN Block:e3 {: RESULT = "public static void main"+"(String[] args) throws IOException "+e3; :}
+            | TYPE:e1 ID:etwo OPAREN FormalParams:e4 CPAREN Block:e5 {: RESULT = "static "+e1+" "+etwo+" ("+e4+" ) throws IOException "+e5; :}
+                ;
+
+
+FormalParams ::= /* empty */ {: RESULT=""; :}
+              | NonEmptyFormalParams:e {: RESULT=e; :}
+              ;
+
+
+
+NonEmptyFormalParams ::= FormalParam:e {: RESULT=e; :}
+                      | NonEmptyFormalParams:e1 COM FormalParam:etwo {: RESULT=e1+", "+etwo; :}
+                      ;
+
+FormalParam ::= TYPE:e1 ID:etwo {: RESULT=e1+" "+etwo; :};
+
+Block ::= BEGIN StatementList:e END {: RESULT="{\n"+e+"\n}\n"; :}
+      | BEGIN END {: RESULT="{\n}\n"; :}
+      ;
+
+StatementList ::= Statement:e {: RESULT=e; :}
+            | StatementList:e1 Statement:etwo {: RESULT=e1+etwo; :}
+            ;
+
+Statement ::= Block:e {: RESULT=e; :}
+      | LocalVarDecl:e {: RESULT=e; :}
+      | AssignStmt:e {: RESULT=e; :}
+      | ReturnStmt:e {: RESULT=e; :}
+      | IfStmt:e {: RESULT=e; :}
+      | WriteStmt:e {: RESULT=e; :}
+            | ReadStmt:e {: RESULT=e; :}
+            ;
+LocalVarDecl ::= TYPE:e1 ID:etwo SEMI {: RESULT=e1+" "+etwo+";\n"; :}
+            | TYPE:e1 AssignStmt:etwo SEMI {: RESULT=e1+etwo+";\n"; :};
+
+AssignStmt ::= ID:e1 ASSIGN Expression:etwo SEMI {: RESULT=e1+"="+etwo+";\n"; :}
+             | ID:e1 ASSIGN QSTRING:etwo SEMI {: RESULT=e1+"="+etwo+";\n"; :}
+             ;
+ReturnStmt ::= RETURN Expression:e SEMI {: RESULT="return "+e+";\n"; :};
+
+IfStmt ::= IF OPAREN BoolExpression:e1 CPAREN Statement:etwo ELSE Statement:e3 {: RESULT="if ("+e1+")"+etwo+"else"+e3; :}
+         | IF OPAREN BoolExpression:e1 CPAREN Statement:etwo {: RESULT="if ("+e1+")"+etwo; :}
+         ;
+
+WriteStmt ::= WRITE OPAREN Expression:e1 COM QSTRING:etwo CPAREN SEMI {: RESULT="BufferedWriter wr=new BufferedWriter(new FileWriter("+etwo+"));\n"+"wr.write(String.valueOf("+ e1+"));\n"+"wr.close();\n"; :};
+
+ReadStmt ::= READ OPAREN PrimaryExpr:e1 COM QSTRING:etwo CPAREN SEMI 
+      {: 
+      String uniqueBrName = "br_" + e1;
+      RESULT = "BufferedReader " + uniqueBrName + " = new BufferedReader(new FileReader(" + etwo + "));\n" +
+            e1 + " = Integer.parseInt(" + uniqueBrName + ".readLine());\n" +
+            uniqueBrName + ".close();\n"; 
+      :};
+
+
+
+BoolExpression ::= Expression:e1 EQUALTO Expression:etwo {: RESULT=e1+"=="+etwo; :}
+      | Expression:e1 NEQUALTO Expression:etwo {: RESULT=e1+"!="+etwo; :}
+      | TRUE {: RESULT = "true"; :}
+                  | FALSE {: RESULT = "false"; :}
+                  ;
+
+FunctionCall ::= ID:e1 OPAREN ActualParams:etwo CPAREN {: RESULT=e1+" ( "+etwo+" )"; :};
+
+ActualParams ::= /* empty */ {: RESULT=""; :}
+      | Expression:e {: RESULT=e; :}
+      | ActualParams:e1 COM Expression:etwo {: RESULT=e1+", "+etwo; :}
+               ; 
+
+PrimaryExpr ::= ID:e {: RESULT=e; :}
+      | NUM:e {: RESULT=e; :}
+              | OPAREN Expression:e CPAREN {: RESULT=" ( "+e+" ) "; :}
+              ;
+
+Expression ::= MultiplicativeExpr:e 
+    {: RESULT = e; :}
+      | Expression:e1 PLUS Expression:etwo 
+      {: RESULT = e1 + "+" + etwo; :}
+      | Expression:e1 MINUS Expression:etwo 
+      {: RESULT = e1 + "-" + etwo; :}
+      | FunctionCall:e 
+    {: RESULT = e; :}
+;
+
+MultiplicativeExpr ::= PrimaryExpr:e 
+    {: RESULT = e; :}
+      | MultiplicativeExpr:e1 TIMES PrimaryExpr:etwo 
+      {: RESULT = e1 + "*" + etwo; :} 
+      | MultiplicativeExpr:e1 DIVIDE PrimaryExpr:etwo 
+    {: RESULT = e1 + "/" + etwo; :}
+;
+
+TYPE::= STRING {:RESULT="String"; :}
+      |INT {:RESULT="int"; :}
+      |REAL {:RESULT="double"; :}
+      ;
